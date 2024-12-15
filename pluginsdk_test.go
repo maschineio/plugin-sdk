@@ -1,4 +1,4 @@
-package pluginsdk_test
+package plugin_test
 
 import (
 	"testing"

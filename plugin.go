@@ -1,4 +1,4 @@
-package pluginsdk
+package plugin
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/hashicorp/go-plugin"
+	hp "github.com/hashicorp/go-plugin"
 	"github.com/samber/lo"
 	"maschine.io/core/context"
 )
@@ -30,7 +30,7 @@ type ResourceManager interface {
 type manager struct {
 	searchPathes []string
 	lambdas      map[string]LambdaFn
-	plugins      map[string]plugin.Plugin
+	plugins      map[string]hp.Plugin
 }
 
 func GetResourceManager() ResourceManager {
@@ -44,7 +44,7 @@ func GetResourceManager() ResourceManager {
 			managerInstance = &manager{
 				searchPathes: searchPathes,
 				lambdas:      make(map[string]LambdaFn, 0),
-				plugins:      make(map[string]plugin.Plugin, 0),
+				plugins:      make(map[string]hp.Plugin, 0),
 			}
 
 		}
@@ -85,17 +85,17 @@ func (m *manager) LoadPlugins(pluginDir string) error {
 	}
 
 	for _, pluginFile := range pluginFiles {
-		client := plugin.NewClient(&plugin.ClientConfig{
-			HandshakeConfig: plugin.HandshakeConfig{
+		client := hp.NewClient(&hp.ClientConfig{
+			HandshakeConfig: hp.HandshakeConfig{
 				ProtocolVersion:  1,
 				MagicCookieKey:   "PLUGIN_MAGIC_COOKIE",
 				MagicCookieValue: "plugin",
 			},
-			Plugins: map[string]plugin.Plugin{
+			Plugins: map[string]hp.Plugin{
 				// "lambda": &LambdaPluginImpl{},
 			},
 			Cmd:              exec.Command(pluginFile),
-			AllowedProtocols: []plugin.Protocol{plugin.ProtocolGRPC},
+			AllowedProtocols: []hp.Protocol{hp.ProtocolGRPC},
 		})
 
 		rpcClient, err := client.Client()
