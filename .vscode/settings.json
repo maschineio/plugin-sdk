@@ -1,0 +1,6 @@
+{
+  "sonarlint.connectedMode.project": {
+    "connectionId": "maschineio-plugin-sdk",
+    "projectKey": "maschineio_plugin-sdk"
+  }
+}

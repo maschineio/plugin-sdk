@@ -26,5 +26,16 @@ jobs:
           level: error
           reporter: github-pr-review
 
-      - name: Run tests
-        run: go test ./... -v
+      - name: Test
+        run: go test -v ./... -short -coverprofile=test.out -covermode=count -json > report.json
+
+      - name: Run Gosec Security Scanner
+        uses: securego/gosec@master
+        with:
+          args: -no-fail -fmt=sonarqube -out secreport.json ./...
+
+      - name: Scan
+        uses: SonarSource/sonarqube-scan-action@v5.2.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
