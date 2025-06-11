@@ -5,7 +5,7 @@ go 1.24.4
 require (
 	github.com/hashicorp/go-plugin v1.6.3
 	github.com/hashicorp/hcl/v2 v2.23.0
-	github.com/samber/lo v1.50.0
+	github.com/samber/lo v1.51.0
 	github.com/stretchr/testify v1.10.0
 	maschine.io/core v0.1.1
 )
