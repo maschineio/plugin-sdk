@@ -9,3 +9,23 @@ Maschine Plugin SDK enables plugins for state machine tasks.
 ```shell
 go get maschine.io/plugin-sdk
 ```
+
+## Schema configuration
+
+Maschine can be configured with the help of a simple `hcl` configuration file, that is used by `maschine init` command, that loads the plugins from the configured scm repository.
+
+This example shows the usage for a configuration.
+
+```hcl
+maschine {
+  plugin "maschine-plugin-hello" {
+    source  = "github.com/maschineio/maschine-plugin-hello"
+    version = "1.0.0"
+  }
+
+  plugin "maschine-plugin-world" {
+    source  = "gitlab.com/maschineio/maschine-plugin-world"
+    version = "2.3.1"
+  }
+}
+```
