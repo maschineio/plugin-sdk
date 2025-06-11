@@ -1,25 +1,35 @@
-run:
-  timeout: 3m
-
-issues:
-  exclude-files:
-    - .*_test\.go
-  exclude-dirs:
-    - vendor
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - errcheck
+version: "2"
 linters:
   enable:
-    - govet
-    - staticcheck
-    - errcheck
-    - gosimple
-    - ineffassign
-    - unused
     - gocyclo
-    - gofmt
-    - goimports
     - misspell
     - revive
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - errcheck
+        path: _test\.go
+    paths:
+      - .*_test\.go
+      - vendor
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - .*_test\.go
+      - vendor
+      - third_party$
+      - builtin$
+      - examples$
