@@ -110,7 +110,9 @@ func (m *manager) LoadPlugins(pluginDir string) error {
 
 		lambdaPlugin := raw.(LambdaPlugin)
 		for name, fn := range lambdaPlugin.Functions() {
-			m.RegisterLambdaFn(name, fn)
+			if err := m.RegisterLambdaFn(name, fn); err != nil {
+				return fmt.Errorf("error registering lambda function %s: %w", name, err)
+			}
 		}
 	}
 

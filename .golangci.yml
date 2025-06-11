@@ -1,0 +1,25 @@
+run:
+  timeout: 3m
+
+issues:
+  exclude-files:
+    - .*_test\.go
+  exclude-dirs:
+    - vendor
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - errcheck
+linters:
+  enable:
+    - govet
+    - staticcheck
+    - errcheck
+    - gosimple
+    - ineffassign
+    - unused
+    - gocyclo
+    - gofmt
+    - goimports
+    - misspell
+    - revive
