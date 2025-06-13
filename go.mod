@@ -7,7 +7,7 @@ require (
 	github.com/hashicorp/hcl/v2 v2.23.0
 	github.com/samber/lo v1.51.0
 	github.com/stretchr/testify v1.10.0
-	maschine.io/core v0.1.1
+	maschine.io/core v1.0.0
 )
 
 require (
