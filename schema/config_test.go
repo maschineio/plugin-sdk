@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestLoadConfig_ValidFile(t *testing.T) {
+func TestLoadConfigValidFile(t *testing.T) {
 	tmpDir := t.TempDir()
 	hclContent := `
 maschine {
@@ -31,7 +31,7 @@ maschine {
 	assert.Equal(t, "v1.2.3", cfg.Maschine.Plugins[0].Version)
 }
 
-func TestLoadConfig_InvalidFile(t *testing.T) {
+func TestLoadConfigInvalidFile(t *testing.T) {
 	tmpDir := t.TempDir()
 	invalidHCL := `maschine { plugin { source = "github.com/test/plugin" version } }`
 	filePath := filepath.Join(tmpDir, "invalid_config.hcl")
@@ -43,8 +43,66 @@ func TestLoadConfig_InvalidFile(t *testing.T) {
 	assert.Nil(t, cfg)
 }
 
-func TestLoadConfig_NonExistentFile(t *testing.T) {
+func TestLoadConfigNonExistentFile(t *testing.T) {
 	cfg, err := LoadConfig("nonexistent_config.hcl")
 	assert.Error(t, err)
 	assert.Nil(t, cfg)
+}
+
+func TestBuildDownloadURL(t *testing.T) {
+	tests := []struct {
+		name        string
+		source      string
+		version     string
+		filename    string
+		want        string
+		wantErr     bool
+		errContains string
+	}{
+		{
+			name:     "github url",
+			source:   "github.com/owner/repo",
+			version:  "1.0.0",
+			filename: "plugin_1.0.0",
+			want:     "https://github.com/owner/repo/releases/download/v1.0.0/plugin_1.0.0",
+		},
+		{
+			name:     "gitlab url",
+			source:   "gitlab.com/owner/repo",
+			version:  "1.0.0",
+			filename: "plugin_1.0.0",
+			want:     "https://gitlab.com/owner/repo/-/releases/v1.0.0/downloads/plugin_1.0.0",
+		},
+		{
+			name:        "invalid source",
+			source:      "invalid/source",
+			version:     "1.0.0",
+			filename:    "plugin_1.0.0",
+			wantErr:     true,
+			errContains: "invalid source format",
+		},
+		{
+			name:        "unsupported host",
+			source:      "unsupported.com/owner/repo",
+			version:     "1.0.0",
+			filename:    "plugin_1.0.0",
+			wantErr:     true,
+			errContains: "unsupported SCM system",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := buildDownloadURL(tt.source, tt.version, tt.filename)
+			if tt.wantErr {
+				assert.Error(t, err)
+				if tt.errContains != "" {
+					assert.Contains(t, err.Error(), tt.errContains)
+				}
+				return
+			}
+			assert.NoError(t, err)
+			assert.Equal(t, tt.want, got)
+		})
+	}
 }
