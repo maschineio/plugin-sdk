@@ -20,15 +20,16 @@ This example shows the usage for a configuration.
 maschine {
   scm {
       type     = "gitlab"
-      base_url = "gitlab.company.com"  # Optional
+      base_url = "gitlab.company.com"  # optional (use your own gitlab server)
   }
+
   plugin "hello-world" {
-      source  = "myteam/hello-plugin"  # shorter, because host is known
+      source  = "myteam/hello-plugin"  # shorter, because host is known and gitlab will be used
       version = "1.0.0"
-      # type = "github"  # Optional overwrite scm type
   }
+
   plugin "other-plugin" {
-      type    = "github"               # overwrites default-SCM
+      type    = "github"               # overwrites default-SCM (which is in this case gitlab)
       source  = "otherteam/plugin"
       version = "2.1.0"
   }
