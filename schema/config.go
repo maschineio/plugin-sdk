@@ -11,6 +11,8 @@ import (
 	"github.com/hashicorp/hcl/v2/hclsimple"
 )
 
+var BuildDownloadURLFunc = buildDownloadURL
+
 // Config represents the configuration structure for the Maschine plugin system.
 type Config struct {
 	Maschine MaschineBlock `hcl:"maschine,block"`
@@ -52,7 +54,7 @@ func (c *Config) DownloadPlugins(dir, operatingSystem, arch string) error {
 		}
 
 		filename := fmt.Sprintf("%s_%s_%s_%s", plugin.Name, plugin.Version, operatingSystem, arch)
-		url, err := buildDownloadURL(plugin.Source, plugin.Version, filename)
+		url, err := BuildDownloadURLFunc(plugin.Source, plugin.Version, filename)
 		if err != nil {
 			return fmt.Errorf("URL construction failed for %s: %v", plugin.Name, err)
 		}

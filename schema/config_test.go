@@ -1,11 +1,15 @@
 package schema
 
 import (
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestLoadConfigValidFile(t *testing.T) {
@@ -103,6 +107,109 @@ func TestBuildDownloadURL(t *testing.T) {
 			}
 			assert.NoError(t, err)
 			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+// Variable to store the buildDownloadURL function
+var buildDownloadURLFunc = buildDownloadURL
+
+func TestDownloadPlugins(t *testing.T) {
+	// Original buildDownloadURL sichern
+	originalBuildDownloadURL := BuildDownloadURLFunc
+	// Nach dem Test wiederherstellen
+	defer func() { BuildDownloadURLFunc = originalBuildDownloadURL }()
+
+	// Mock Server
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("mock plugin binary"))
+	}))
+	defer ts.Close()
+
+	// buildDownloadURL für den Test überschreiben
+	BuildDownloadURLFunc = func(source, version, filename string) (string, error) {
+		return ts.URL, nil
+	}
+
+	tests := []struct {
+		name        string
+		config      *Config
+		dir         string
+		os          string
+		arch        string
+		setupDir    bool
+		wantErr     bool
+		errContains string
+	}{
+		{
+			name: "erfolgreicher Download",
+			config: &Config{
+				Maschine: MaschineBlock{
+					Plugins: []PluginBlock{
+						{
+							Name:    "test-plugin",
+							Source:  "github.com/owner/repo",
+							Version: "1.0.0",
+						},
+					},
+				},
+			},
+			dir:      t.TempDir(),
+			os:       "linux",
+			arch:     "amd64",
+			setupDir: true,
+		},
+		{
+			name: "fehlerhaftes Source-Format",
+			config: &Config{
+				Maschine: MaschineBlock{
+					Plugins: []PluginBlock{
+						{
+							Name:    "test-plugin",
+							Source:  "invalid/source",
+							Version: "1.0.0",
+						},
+					},
+				},
+			},
+			dir:         t.TempDir(),
+			os:          "linux",
+			arch:        "amd64",
+			setupDir:    true,
+			wantErr:     true,
+			errContains: "invalid source format",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.setupDir {
+				err := os.MkdirAll(tt.dir, 0755)
+				require.NoError(t, err)
+			}
+
+			err := tt.config.DownloadPlugins(tt.dir, tt.os, tt.arch)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				if tt.errContains != "" {
+					assert.Contains(t, err.Error(), tt.errContains)
+				}
+				return
+			}
+
+			assert.NoError(t, err)
+			expectedFile := filepath.Join(tt.dir,
+				fmt.Sprintf("%s_%s_%s_%s",
+					tt.config.Maschine.Plugins[0].Name,
+					tt.config.Maschine.Plugins[0].Version,
+					tt.os,
+					tt.arch))
+
+			content, err := os.ReadFile(expectedFile)
+			assert.NoError(t, err)
+			assert.Equal(t, "mock plugin binary", string(content))
 		})
 	}
 }
