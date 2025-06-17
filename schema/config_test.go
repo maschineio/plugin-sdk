@@ -12,50 +12,52 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestLoadConfigValidFile(t *testing.T) {
-	tmpDir := t.TempDir()
-	hclContent := `
+func TestLoadConfig(t *testing.T) {
+	t.Run("gültige Konfiguration", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		validConfig := `
 maschine {
-  plugin "testPlugin" {
-	source  = "github.com/test/plugin"
-	version = "v1.2.3"
+  scm {
+    type = "github"
   }
-}
-`
-	filePath := filepath.Join(tmpDir, "valid_config.hcl")
-	err := os.WriteFile(filePath, []byte(hclContent), 0644)
-	assert.NoError(t, err)
+  plugin "testPlugin" {
+    source = "owner/repo"
+    version = "1.0.0"
+  }
+}`
+		configPath := filepath.Join(tmpDir, "config.hcl")
+		require.NoError(t, os.WriteFile(configPath, []byte(validConfig), 0644))
 
-	cfg, loadErr := LoadConfig(filePath)
-	assert.NoError(t, loadErr)
-	assert.NotNil(t, cfg)
-	assert.Equal(t, 1, len(cfg.Maschine.Plugins))
-	assert.Equal(t, "testPlugin", cfg.Maschine.Plugins[0].Name)
-	assert.Equal(t, "github.com/test/plugin", cfg.Maschine.Plugins[0].Source)
-	assert.Equal(t, "v1.2.3", cfg.Maschine.Plugins[0].Version)
-}
+		cfg, err := LoadConfig(configPath)
+		assert.NoError(t, err)
+		assert.NotNil(t, cfg)
+		assert.Equal(t, GitHub, cfg.Maschine.DefaultSCM.Type)
+		assert.Equal(t, "testPlugin", cfg.Maschine.Plugins[0].Name)
+	})
 
-func TestLoadConfigInvalidFile(t *testing.T) {
-	tmpDir := t.TempDir()
-	invalidHCL := `maschine { plugin { source = "github.com/test/plugin" version } }`
-	filePath := filepath.Join(tmpDir, "invalid_config.hcl")
-	err := os.WriteFile(filePath, []byte(invalidHCL), 0644)
-	assert.NoError(t, err)
+	t.Run("ungültige Konfiguration", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		invalidConfig := `maschine { invalid }`
+		configPath := filepath.Join(tmpDir, "invalid.hcl")
+		require.NoError(t, os.WriteFile(configPath, []byte(invalidConfig), 0644))
 
-	cfg, loadErr := LoadConfig(filePath)
-	assert.Error(t, loadErr)
-	assert.Nil(t, cfg)
-}
+		cfg, err := LoadConfig(configPath)
+		assert.Error(t, err)
+		assert.Nil(t, cfg)
+	})
 
-func TestLoadConfigNonExistentFile(t *testing.T) {
-	cfg, err := LoadConfig("nonexistent_config.hcl")
-	assert.Error(t, err)
-	assert.Nil(t, cfg)
+	t.Run("nicht existierende Datei", func(t *testing.T) {
+		cfg, err := LoadConfig("nicht-vorhanden.hcl")
+		assert.Error(t, err)
+		assert.Nil(t, cfg)
+	})
 }
 
 func TestBuildDownloadURL(t *testing.T) {
 	tests := []struct {
 		name        string
+		scmType     SCMType
+		baseURL     string
 		source      string
 		version     string
 		filename    string
@@ -64,40 +66,61 @@ func TestBuildDownloadURL(t *testing.T) {
 		errContains string
 	}{
 		{
-			name:     "github url",
-			source:   "github.com/owner/repo",
+			name:     "GitHub Standard-URL",
+			scmType:  GitHub,
+			source:   "owner/repo",
 			version:  "1.0.0",
-			filename: "plugin_1.0.0",
-			want:     "https://github.com/owner/repo/releases/download/v1.0.0/plugin_1.0.0",
+			filename: "plugin.bin",
+			want:     "https://github.com/owner/repo/releases/download/v1.0.0/plugin.bin",
 		},
 		{
-			name:     "gitlab url",
-			source:   "gitlab.com/owner/repo",
+			name:     "GitLab Standard-URL",
+			scmType:  GitLab,
+			source:   "owner/repo",
 			version:  "1.0.0",
-			filename: "plugin_1.0.0",
-			want:     "https://gitlab.com/owner/repo/-/releases/v1.0.0/downloads/plugin_1.0.0",
+			filename: "plugin.bin",
+			want:     "https://gitlab.com/owner/repo/-/releases/v1.0.0/downloads/plugin.bin",
 		},
 		{
-			name:        "invalid source",
-			source:      "invalid/source",
+			name:     "BitBucket Standard-URL",
+			scmType:  BitBucket,
+			source:   "owner/repo",
+			version:  "1.0.0",
+			filename: "plugin.bin",
+			want:     "https://bitbucket.org/owner/repo/downloads/plugin.bin",
+		},
+		{
+			name:     "Benutzerdefinierte Base-URL",
+			scmType:  GitHub,
+			baseURL:  "git.example.com",
+			source:   "owner/repo",
+			version:  "1.0.0",
+			filename: "plugin.bin",
+			want:     "https://git.example.com/owner/repo/releases/download/v1.0.0/plugin.bin",
+		},
+		{
+			name:        "Ungültiges Source-Format",
+			scmType:     GitHub,
+			source:      "ungültig",
 			version:     "1.0.0",
-			filename:    "plugin_1.0.0",
+			filename:    "plugin.bin",
 			wantErr:     true,
 			errContains: "invalid source format",
 		},
 		{
-			name:        "unsupported host",
-			source:      "unsupported.com/owner/repo",
+			name:        "Nicht unterstützter SCM-Typ",
+			scmType:     "unsupported",
+			source:      "owner/repo",
 			version:     "1.0.0",
-			filename:    "plugin_1.0.0",
+			filename:    "plugin.bin",
 			wantErr:     true,
-			errContains: "unsupported SCM system",
+			errContains: "unsupported SCM type",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := buildDownloadURL(tt.source, tt.version, tt.filename)
+			got, err := buildDownloadURL(tt.scmType, tt.baseURL, tt.source, tt.version, tt.filename)
 			if tt.wantErr {
 				assert.Error(t, err)
 				if tt.errContains != "" {
@@ -111,86 +134,72 @@ func TestBuildDownloadURL(t *testing.T) {
 	}
 }
 
-// Variable to store the buildDownloadURL function
-var buildDownloadURLFunc = buildDownloadURL
-
 func TestDownloadPlugins(t *testing.T) {
-	// Original buildDownloadURL sichern
-	originalBuildDownloadURL := BuildDownloadURLFunc
-	// Nach dem Test wiederherstellen
-	defer func() { BuildDownloadURLFunc = originalBuildDownloadURL }()
+	origBuildDownloadURL := BuildDownloadURL
+	defer func() { BuildDownloadURL = origBuildDownloadURL }()
 
-	// Mock Server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("mock plugin binary"))
 	}))
 	defer ts.Close()
 
-	// buildDownloadURL für den Test überschreiben
-	BuildDownloadURLFunc = func(source, version, filename string) (string, error) {
-		return ts.URL, nil
-	}
-
 	tests := []struct {
 		name        string
+		setupMock   func()
 		config      *Config
 		dir         string
 		os          string
 		arch        string
-		setupDir    bool
 		wantErr     bool
 		errContains string
 	}{
 		{
 			name: "erfolgreicher Download",
+			setupMock: func() {
+				BuildDownloadURL = func(scmType SCMType, baseURL, source, version, filename string) (string, error) {
+					return ts.URL, nil
+				}
+			},
 			config: &Config{
 				Maschine: MaschineBlock{
+					DefaultSCM: SCMConfig{Type: GitHub},
 					Plugins: []PluginBlock{
-						{
-							Name:    "test-plugin",
-							Source:  "github.com/owner/repo",
-							Version: "1.0.0",
-						},
+						{Name: "test", Source: "owner/repo", Version: "1.0.0"},
 					},
 				},
 			},
-			dir:      t.TempDir(),
-			os:       "linux",
-			arch:     "amd64",
-			setupDir: true,
+			dir:  t.TempDir(),
+			os:   "linux",
+			arch: "amd64",
 		},
 		{
-			name: "fehlerhaftes Source-Format",
+			name: "URL-Konstruktion fehlgeschlagen",
+			setupMock: func() {
+				BuildDownloadURL = func(scmType SCMType, baseURL, source, version, filename string) (string, error) {
+					return "", fmt.Errorf("URL error")
+				}
+			},
 			config: &Config{
 				Maschine: MaschineBlock{
+					DefaultSCM: SCMConfig{Type: GitHub},
 					Plugins: []PluginBlock{
-						{
-							Name:    "test-plugin",
-							Source:  "invalid/source",
-							Version: "1.0.0",
-						},
+						{Name: "test", Source: "invalid", Version: "1.0.0"},
 					},
 				},
 			},
 			dir:         t.TempDir(),
 			os:          "linux",
 			arch:        "amd64",
-			setupDir:    true,
 			wantErr:     true,
-			errContains: "invalid source format",
+			errContains: "URL construction failed",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.setupDir {
-				err := os.MkdirAll(tt.dir, 0755)
-				require.NoError(t, err)
-			}
-
+			tt.setupMock()
 			err := tt.config.DownloadPlugins(tt.dir, tt.os, tt.arch)
-
 			if tt.wantErr {
 				assert.Error(t, err)
 				if tt.errContains != "" {
@@ -198,16 +207,16 @@ func TestDownloadPlugins(t *testing.T) {
 				}
 				return
 			}
-
 			assert.NoError(t, err)
-			expectedFile := filepath.Join(tt.dir,
-				fmt.Sprintf("%s_%s_%s_%s",
-					tt.config.Maschine.Plugins[0].Name,
-					tt.config.Maschine.Plugins[0].Version,
-					tt.os,
-					tt.arch))
 
-			content, err := os.ReadFile(expectedFile)
+			// Überprüfe heruntergeladene Datei
+			pluginFile := filepath.Join(tt.dir, fmt.Sprintf("%s_%s_%s_%s",
+				tt.config.Maschine.Plugins[0].Name,
+				tt.config.Maschine.Plugins[0].Version,
+				tt.os,
+				tt.arch))
+
+			content, err := os.ReadFile(pluginFile)
 			assert.NoError(t, err)
 			assert.Equal(t, "mock plugin binary", string(content))
 		})

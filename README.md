@@ -18,14 +18,19 @@ This example shows the usage for a configuration.
 
 ```hcl
 maschine {
-  plugin "maschine-plugin-hello" {
-    source  = "github.com/maschineio/maschine-plugin-hello"
-    version = "1.0.0"
+  scm {
+      type     = "gitlab"
+      base_url = "gitlab.company.com"  # Optional
   }
-
-  plugin "maschine-plugin-world" {
-    source  = "gitlab.com/maschineio/maschine-plugin-world"
-    version = "2.3.1"
+  plugin "hello-world" {
+      source  = "myteam/hello-plugin"  # shorter, because host is known
+      version = "1.0.0"
+      # type = "github"  # Optional overwrite scm type
+  }
+  plugin "other-plugin" {
+      type    = "github"               # overwrites default-SCM
+      source  = "otherteam/plugin"
+      version = "2.1.0"
   }
 }
 ```
