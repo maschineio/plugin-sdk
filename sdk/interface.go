@@ -23,6 +23,9 @@ type Resource interface {
 	// GetMetadata returns plugin metadata
 	GetMetadata(ctx context.Context) (*Metadata, error)
 	
+	// GetVersion returns detailed version information
+	GetVersion(ctx context.Context) (*VersionInfo, error)
+	
 	// Execute runs the plugin function
 	Execute(ctx context.Context, req *ExecuteRequest) (*ExecuteResponse, error)
 	
@@ -42,6 +45,16 @@ type Metadata struct {
 type HealthStatus struct {
 	Healthy bool
 	Message string
+}
+
+// VersionInfo contains detailed version information
+type VersionInfo struct {
+	Version      string            `json:"version"`
+	GitCommit    string            `json:"git_commit"`
+	BuildDate    string            `json:"build_date"`
+	GoVersion    string            `json:"go_version"`
+	Platform     string            `json:"platform"`
+	Dependencies map[string]string `json:"dependencies,omitempty"`
 }
 
 // ResourcePlugin is the plugin implementation

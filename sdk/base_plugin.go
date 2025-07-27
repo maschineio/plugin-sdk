@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"runtime"
 	"sort"
 )
 
@@ -15,9 +16,10 @@ type PluginFunction struct {
 
 // BasePlugin provides a base implementation for plugins using a function registry
 type BasePlugin struct {
-	name      string
-	version   string
-	functions map[string]PluginFunction
+	name         string
+	version      string
+	functions    map[string]PluginFunction
+	versionInfo  *VersionInfo // Optional detailed version info
 }
 
 // NewBasePlugin creates a new base plugin
@@ -107,6 +109,25 @@ func (p *BasePlugin) HealthCheck(ctx context.Context) (*HealthStatus, error) {
 		Healthy: true,
 		Message: fmt.Sprintf("%s plugin is operational", p.name),
 	}, nil
+}
+
+// GetVersion returns detailed version information
+func (p *BasePlugin) GetVersion(ctx context.Context) (*VersionInfo, error) {
+	if p.versionInfo != nil {
+		return p.versionInfo, nil
+	}
+	
+	// Return default version info if not set
+	return &VersionInfo{
+		Version:   p.version,
+		GoVersion: runtime.Version(),
+		Platform:  fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
+	}, nil
+}
+
+// SetVersionInfo allows plugins to provide detailed version information
+func (p *BasePlugin) SetVersionInfo(info *VersionInfo) {
+	p.versionInfo = info
 }
 
 // SetHealthCheck allows plugins to override the default health check
