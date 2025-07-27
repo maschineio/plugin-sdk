@@ -79,7 +79,7 @@ func (c *Config) DownloadPlugins(dir, operatingSystem, arch string) error {
 			scmType = *plugin.Type
 		}
 
-		filename := fmt.Sprintf("%s_%s_%s_%s", plugin.Name, plugin.Version, operatingSystem, arch)
+		filename := fmt.Sprintf("%s_%s_%s_%s.zip", plugin.Name, plugin.Version, operatingSystem, arch)
 		url, err := BuildDownloadURL(scmType, c.Maschine.DefaultSCM.BaseURL, plugin.Source, plugin.Version, filename)
 		if err != nil {
 			return fmt.Errorf("URL construction failed for %s: %v", plugin.Name, err)

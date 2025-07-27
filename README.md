@@ -35,3 +35,7 @@ maschine {
   }
 }
 ```
+
+## Rules
+
+All plugins must be compressed with zip and must have a `filename.zip` suffix.

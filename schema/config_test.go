@@ -13,16 +13,16 @@ import (
 )
 
 func TestLoadConfig(t *testing.T) {
-	t.Run("gültige Konfiguration", func(t *testing.T) {
+	t.Run("valid configuration", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		validConfig := `
 maschine {
   scm {
-    type = "github"
+	type = "github"
   }
   plugin "testPlugin" {
-    source = "owner/repo"
-    version = "1.0.0"
+	source = "owner/repo"
+	version = "1.0.0"
   }
 }`
 		configPath := filepath.Join(tmpDir, "config.hcl")
@@ -35,7 +35,7 @@ maschine {
 		assert.Equal(t, "testPlugin", cfg.Maschine.Plugins[0].Name)
 	})
 
-	t.Run("ungültige Konfiguration", func(t *testing.T) {
+	t.Run("invalid configuration", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		invalidConfig := `maschine { invalid }`
 		configPath := filepath.Join(tmpDir, "invalid.hcl")
@@ -46,8 +46,8 @@ maschine {
 		assert.Nil(t, cfg)
 	})
 
-	t.Run("nicht existierende Datei", func(t *testing.T) {
-		cfg, err := LoadConfig("nicht-vorhanden.hcl")
+	t.Run("non existing file", func(t *testing.T) {
+		cfg, err := LoadConfig("non-existent.hcl")
 		assert.Error(t, err)
 		assert.Nil(t, cfg)
 	})
@@ -66,53 +66,53 @@ func TestBuildDownloadURL(t *testing.T) {
 		errContains string
 	}{
 		{
-			name:     "GitHub Standard-URL",
+			name:     "GitHub standard URL",
 			scmType:  GitHub,
 			source:   "owner/repo",
 			version:  "1.0.0",
-			filename: "plugin.bin",
-			want:     "https://github.com/owner/repo/releases/download/v1.0.0/plugin.bin",
+			filename: "plugin.bin.zip",
+			want:     "https://github.com/owner/repo/releases/download/v1.0.0/plugin.bin.zip",
 		},
 		{
-			name:     "GitLab Standard-URL",
+			name:     "GitLab standard URL",
 			scmType:  GitLab,
 			source:   "owner/repo",
 			version:  "1.0.0",
-			filename: "plugin.bin",
-			want:     "https://gitlab.com/owner/repo/-/releases/v1.0.0/downloads/plugin.bin",
+			filename: "plugin.bin.zip",
+			want:     "https://gitlab.com/owner/repo/-/releases/v1.0.0/downloads/plugin.bin.zip",
 		},
 		{
-			name:     "BitBucket Standard-URL",
+			name:     "BitBucket standard URL",
 			scmType:  BitBucket,
 			source:   "owner/repo",
 			version:  "1.0.0",
-			filename: "plugin.bin",
-			want:     "https://bitbucket.org/owner/repo/downloads/plugin.bin",
+			filename: "plugin.bin.zip",
+			want:     "https://bitbucket.org/owner/repo/downloads/plugin.bin.zip",
 		},
 		{
-			name:     "Benutzerdefinierte Base-URL",
+			name:     "Custom base URL",
 			scmType:  GitHub,
 			baseURL:  "git.example.com",
 			source:   "owner/repo",
 			version:  "1.0.0",
-			filename: "plugin.bin",
-			want:     "https://git.example.com/owner/repo/releases/download/v1.0.0/plugin.bin",
+			filename: "plugin.bin.zip",
+			want:     "https://git.example.com/owner/repo/releases/download/v1.0.0/plugin.bin.zip",
 		},
 		{
-			name:        "Ungültiges Source-Format",
+			name:        "Invalid source format",
 			scmType:     GitHub,
-			source:      "ungültig",
+			source:      "invalid",
 			version:     "1.0.0",
-			filename:    "plugin.bin",
+			filename:    "plugin.bin.zip",
 			wantErr:     true,
 			errContains: "invalid source format",
 		},
 		{
-			name:        "Nicht unterstützter SCM-Typ",
+			name:        "Unsupported SCM type",
 			scmType:     "unsupported",
 			source:      "owner/repo",
 			version:     "1.0.0",
-			filename:    "plugin.bin",
+			filename:    "plugin.bin.zip",
 			wantErr:     true,
 			errContains: "unsupported SCM type",
 		},
@@ -155,7 +155,7 @@ func TestDownloadPlugins(t *testing.T) {
 		errContains string
 	}{
 		{
-			name: "erfolgreicher Download",
+			name: "successful download",
 			setupMock: func() {
 				BuildDownloadURL = func(scmType SCMType, baseURL, source, version, filename string) (string, error) {
 					return ts.URL, nil
@@ -174,7 +174,7 @@ func TestDownloadPlugins(t *testing.T) {
 			arch: "amd64",
 		},
 		{
-			name: "URL-Konstruktion fehlgeschlagen",
+			name: "URL construction failed",
 			setupMock: func() {
 				BuildDownloadURL = func(scmType SCMType, baseURL, source, version, filename string) (string, error) {
 					return "", fmt.Errorf("URL error")
@@ -209,8 +209,7 @@ func TestDownloadPlugins(t *testing.T) {
 			}
 			assert.NoError(t, err)
 
-			// Überprüfe heruntergeladene Datei
-			pluginFile := filepath.Join(tt.dir, fmt.Sprintf("%s_%s_%s_%s",
+			pluginFile := filepath.Join(tt.dir, fmt.Sprintf("%s_%s_%s_%s.zip",
 				tt.config.Maschine.Plugins[0].Name,
 				tt.config.Maschine.Plugins[0].Version,
 				tt.os,
