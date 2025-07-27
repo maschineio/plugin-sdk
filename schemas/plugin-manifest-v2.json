@@ -1,0 +1,425 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://maschine.io/schemas/plugin-manifest-v2.json",
+  "title": "Maschine Plugin Manifest",
+  "description": "Schema for Maschine plugin manifest files (version 2.0)",
+  "type": "object",
+  "required": ["manifestVersion", "plugin", "runtime", "requirements", "resources"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "format": "uri"
+    },
+    "manifestVersion": {
+      "type": "string",
+      "enum": ["2.0"],
+      "description": "Version of the manifest format"
+    },
+    "plugin": {
+      "type": "object",
+      "required": ["id", "name", "displayName", "version", "description", "category", "author", "license"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9]*(\\.[a-z][a-z0-9]*)+$",
+          "description": "Unique plugin identifier in reverse domain notation"
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$",
+          "description": "Technical plugin name"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Human-readable plugin name"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+(-[a-zA-Z0-9]+)?(\\+[a-zA-Z0-9]+)?$",
+          "description": "Semantic version"
+        },
+        "description": {
+          "type": "string",
+          "description": "Plugin description"
+        },
+        "category": {
+          "type": "string",
+          "enum": ["communication", "cloud", "monitoring", "security", "data", "general"],
+          "description": "Plugin category"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Keywords for plugin discovery"
+        },
+        "author": {
+          "type": "object",
+          "required": ["name", "email"],
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "email": {
+              "type": "string",
+              "format": "email"
+            },
+            "url": {
+              "type": "string",
+              "format": "uri"
+            }
+          }
+        },
+        "license": {
+          "type": "string",
+          "description": "SPDX license identifier"
+        },
+        "homepage": {
+          "type": "string",
+          "format": "uri"
+        },
+        "repository": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["git", "svn", "mercurial"]
+            },
+            "url": {
+              "type": "string",
+              "format": "uri"
+            }
+          }
+        },
+        "bugs": {
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string",
+              "format": "uri"
+            }
+          }
+        }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "required": ["type", "executable", "protocol", "protocolVersion"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["native", "container", "wasm"],
+          "description": "Plugin runtime type (native=standalone binary, container=Docker/OCI, wasm=WebAssembly)"
+        },
+        "executable": {
+          "type": "object",
+          "required": ["path"],
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "Relative path to plugin executable"
+            },
+            "checksums": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string",
+                "pattern": "^sha256:[a-f0-9]{64}$"
+              },
+              "description": "Platform-specific SHA256 checksums"
+            }
+          }
+        },
+        "protocol": {
+          "type": "string",
+          "enum": ["grpc", "http", "stdio"],
+          "description": "Communication protocol"
+        },
+        "protocolVersion": {
+          "type": "string"
+        },
+        "handshakeConfig": {
+          "type": "object",
+          "properties": {
+            "protocolVersion": {
+              "type": "integer"
+            },
+            "magicCookieKey": {
+              "type": "string"
+            },
+            "magicCookieValue": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "requirements": {
+      "type": "object",
+      "required": ["maschineVersion", "os", "arch"],
+      "properties": {
+        "maschineVersion": {
+          "type": "string",
+          "description": "Semantic version constraint for Maschine"
+        },
+        "os": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["darwin", "linux", "windows", "freebsd", "openbsd"]
+          },
+          "minItems": 1
+        },
+        "arch": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["amd64", "arm64", "386", "arm"]
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "configuration": {
+      "type": "object",
+      "properties": {
+        "environment": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "description", "required"],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "default": {
+                "type": "string"
+              },
+              "enum": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "credentials": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "description", "fields"],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["name", "type", "required"],
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": ["string", "number", "boolean"]
+                    },
+                    "required": {
+                      "type": "boolean"
+                    },
+                    "secret": {
+                      "type": "boolean"
+                    },
+                    "pattern": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "resources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type", "name", "description", "category", "parameters"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "pattern": "^mrn:[a-z]+:[a-z]+:[a-z]+$",
+            "description": "MRN resource type"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "enum": ["action", "query", "check"]
+          },
+          "parameters": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "type", "required", "description"],
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": ["string", "integer", "number", "boolean", "array", "object"]
+                },
+                "required": {
+                  "type": "boolean"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "default": {},
+                "pattern": {
+                  "type": "string"
+                },
+                "minLength": {
+                  "type": "integer"
+                },
+                "maxLength": {
+                  "type": "integer"
+                },
+                "minimum": {
+                  "type": "number"
+                },
+                "maximum": {
+                  "type": "number"
+                },
+                "enum": {
+                  "type": "array"
+                },
+                "items": {
+                  "type": "object"
+                },
+                "properties": {}
+              }
+            }
+          },
+          "requiredCredentials": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "output": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string"
+              },
+              "schema": {}
+            }
+          },
+          "examples": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "parameters": {
+                  "type": "object"
+                },
+                "output": {}
+              }
+            }
+          }
+        }
+      },
+      "minItems": 1
+    },
+    "capabilities": {
+      "type": "object",
+      "properties": {
+        "health_check": {
+          "type": "boolean"
+        },
+        "concurrent_execution": {
+          "type": "boolean"
+        },
+        "stateless": {
+          "type": "boolean"
+        },
+        "supports_credentials": {
+          "type": "boolean"
+        }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "properties": {
+        "startup_timeout": {
+          "type": "string",
+          "pattern": "^\\d+(ns|us|µs|ms|s|m|h)$"
+        },
+        "execute_timeout": {
+          "type": "string",
+          "pattern": "^\\d+(ns|us|µs|ms|s|m|h)$"
+        },
+        "health_check_interval": {
+          "type": "string",
+          "pattern": "^\\d+(ns|us|µs|ms|s|m|h)$"
+        },
+        "health_check_timeout": {
+          "type": "string",
+          "pattern": "^\\d+(ns|us|µs|ms|s|m|h)$"
+        },
+        "max_concurrent_executions": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "documentation": {
+      "type": "object",
+      "properties": {
+        "installation": {
+          "type": "string",
+          "format": "uri"
+        },
+        "configuration": {
+          "type": "string",
+          "format": "uri"
+        },
+        "usage": {
+          "type": "string",
+          "format": "uri"
+        },
+        "api": {
+          "type": "string",
+          "format": "uri"
+        }
+      }
+    }
+  }
+}
