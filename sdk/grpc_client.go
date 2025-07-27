@@ -2,20 +2,22 @@ package sdk
 
 import (
 	"context"
+	
+	pluginv1 "maschine.io/plugin-sdk/proto/plugin/v1"
 )
 
-// grpcClient implements the client side of the gRPC plugin
+// grpcClient is an implementation of MaschineResource that talks over RPC
 type grpcClient struct {
-	client PluginClient
+	client pluginv1.PluginClient
 }
 
-func (c *grpcClient) GetMetadata(ctx context.Context) (*Metadata, error) {
-	resp, err := c.client.GetMetadata(ctx, &GetMetadataRequest{})
+func (c *grpcClient) GetMetadata(ctx context.Context, req *GetMetadataRequest) (*GetMetadataResponse, error) {
+	resp, err := c.client.GetMetadata(ctx, &pluginv1.GetMetadataRequest{})
 	if err != nil {
 		return nil, err
 	}
 	
-	return &Metadata{
+	return &GetMetadataResponse{
 		Name:               resp.Name,
 		Version:            resp.Version,
 		SupportedResources: resp.SupportedResources,
@@ -24,15 +26,13 @@ func (c *grpcClient) GetMetadata(ctx context.Context) (*Metadata, error) {
 }
 
 func (c *grpcClient) Execute(ctx context.Context, req *ExecuteRequest) (*ExecuteResponse, error) {
-	grpcReq := &ExecuteRequest{
+	resp, err := c.client.Execute(ctx, &pluginv1.ExecuteRequest{
 		Resource:    req.Resource,
 		Input:       req.Input,
 		Parameters:  req.Parameters,
 		Credentials: req.Credentials,
 		Context:     req.Context,
-	}
-	
-	resp, err := c.client.Execute(ctx, grpcReq)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -44,13 +44,13 @@ func (c *grpcClient) Execute(ctx context.Context, req *ExecuteRequest) (*Execute
 	}, nil
 }
 
-func (c *grpcClient) HealthCheck(ctx context.Context) (*HealthStatus, error) {
-	resp, err := c.client.HealthCheck(ctx, &HealthCheckRequest{})
+func (c *grpcClient) HealthCheck(ctx context.Context, req *HealthCheckRequest) (*HealthCheckResponse, error) {
+	resp, err := c.client.HealthCheck(ctx, &pluginv1.HealthCheckRequest{})
 	if err != nil {
 		return nil, err
 	}
 	
-	return &HealthStatus{
+	return &HealthCheckResponse{
 		Healthy: resp.Healthy,
 		Message: resp.Message,
 	}, nil

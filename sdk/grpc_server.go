@@ -2,57 +2,61 @@ package sdk
 
 import (
 	"context"
+	
+	pluginv1 "maschine.io/plugin-sdk/proto/plugin/v1"
 )
 
-// grpcServer implements the gRPC server for the plugin
+// grpcServer is the server that GRPCServer will construct
 type grpcServer struct {
-	UnimplementedPluginServer
-	Impl Resource
+	pluginv1.UnimplementedPluginServer
+	// This is our real implementation
+	Impl MaschineResource
 }
 
-func (s *grpcServer) GetMetadata(ctx context.Context, req *GetMetadataRequest) (*GetMetadataResponse, error) {
-	metadata, err := s.Impl.GetMetadata(ctx)
+func (s *grpcServer) GetMetadata(ctx context.Context, req *pluginv1.GetMetadataRequest) (*pluginv1.GetMetadataResponse, error) {
+	resp, err := s.Impl.GetMetadata(ctx, &GetMetadataRequest{})
 	if err != nil {
 		return nil, err
 	}
 	
-	return &GetMetadataResponse{
-		Name:               metadata.Name,
-		Version:            metadata.Version,
-		SupportedResources: metadata.SupportedResources,
-		Capabilities:       metadata.Capabilities,
+	return &pluginv1.GetMetadataResponse{
+		Name:               resp.Name,
+		Version:            resp.Version,
+		SupportedResources: resp.SupportedResources,
+		Capabilities:       resp.Capabilities,
 	}, nil
 }
 
-func (s *grpcServer) Execute(ctx context.Context, req *ExecuteRequest) (*ExecuteResponse, error) {
-	executeReq := &ExecuteRequest{
+func (s *grpcServer) Execute(ctx context.Context, req *pluginv1.ExecuteRequest) (*pluginv1.ExecuteResponse, error) {
+	resp, err := s.Impl.Execute(ctx, &ExecuteRequest{
 		Resource:    req.Resource,
 		Input:       req.Input,
 		Parameters:  req.Parameters,
 		Credentials: req.Credentials,
 		Context:     req.Context,
-	}
-	
-	resp, err := s.Impl.Execute(ctx, executeReq)
+	})
 	if err != nil {
-		return nil, err
+		// If Execute returns an error, wrap it in the response
+		return &pluginv1.ExecuteResponse{
+			Error: err.Error(),
+		}, nil
 	}
 	
-	return &ExecuteResponse{
+	return &pluginv1.ExecuteResponse{
 		Output:   resp.Output,
 		Error:    resp.Error,
 		Metadata: resp.Metadata,
 	}, nil
 }
 
-func (s *grpcServer) HealthCheck(ctx context.Context, req *HealthCheckRequest) (*HealthCheckResponse, error) {
-	status, err := s.Impl.HealthCheck(ctx)
+func (s *grpcServer) HealthCheck(ctx context.Context, req *pluginv1.HealthCheckRequest) (*pluginv1.HealthCheckResponse, error) {
+	resp, err := s.Impl.HealthCheck(ctx, &HealthCheckRequest{})
 	if err != nil {
 		return nil, err
 	}
 	
-	return &HealthCheckResponse{
-		Healthy: status.Healthy,
-		Message: status.Message,
+	return &pluginv1.HealthCheckResponse{
+		Healthy: resp.Healthy,
+		Message: resp.Message,
 	}, nil
 }

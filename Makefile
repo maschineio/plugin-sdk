@@ -11,18 +11,24 @@ GOVET=$(GOCMD) vet
 
 # Binary names
 MANIFEST_GEN_BINARY=manifest-gen
+MANIFEST_UPDATER_BINARY=manifest-updater
 
 # Build directories
 BIN_DIR=bin
 
 all: test build
 
-build: manifest-gen
+build: manifest-gen manifest-updater
 
 manifest-gen:
 	@echo "Building manifest generator..."
 	@mkdir -p $(BIN_DIR)
 	$(GOBUILD) -o $(BIN_DIR)/$(MANIFEST_GEN_BINARY) ./cmd/manifest-gen
+
+manifest-updater:
+	@echo "Building manifest updater..."
+	@mkdir -p $(BIN_DIR)
+	$(GOBUILD) -o $(BIN_DIR)/$(MANIFEST_UPDATER_BINARY) ./cmd/manifest-updater
 
 test:
 	@echo "Running tests..."
@@ -33,9 +39,10 @@ clean:
 	@rm -rf $(BIN_DIR)
 	$(GOCMD) clean
 
-install: manifest-gen
-	@echo "Installing manifest generator..."
+install: manifest-gen manifest-updater
+	@echo "Installing tools..."
 	$(GOCMD) install ./cmd/manifest-gen
+	$(GOCMD) install ./cmd/manifest-updater
 
 fmt:
 	@echo "Formatting code..."
@@ -67,6 +74,7 @@ help:
 	@echo "  make              - Run tests and build all binaries"
 	@echo "  make build        - Build all binaries"
 	@echo "  make manifest-gen - Build manifest generator tool"
+	@echo "  make manifest-updater - Build manifest updater tool"
 	@echo "  make test         - Run all tests"
 	@echo "  make clean        - Clean build artifacts"
 	@echo "  make install      - Install tools"
