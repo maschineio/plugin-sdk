@@ -25,6 +25,7 @@ manifest-gen \
 ```
 
 This generates a `plugin-manifest-v2.json` file with:
+
 - Basic plugin metadata
 - Default runtime configuration for native gRPC plugins
 - Example resource definition
@@ -48,20 +49,20 @@ manifest-gen -update -output ./plugin-manifest-v2.json -version 1.0.0
 
 ## Command-Line Options
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `-id` | Plugin ID in reverse domain notation (e.g., io.maschine.plugins.example) | Required |
-| `-name` | Plugin technical name (e.g., example-plugin) | Required |
-| `-display-name` | Plugin display name (e.g., "Example Plugin") | Generated from name |
-| `-description` | Plugin description | Generated |
-| `-category` | Plugin category (communication, cloud, monitoring, security, data, general) | general |
-| `-version` | Plugin version | 0.1.0 |
-| `-author` | Author name | Unknown |
-| `-email` | Author email | unknown@example.com |
-| `-license` | License (SPDX identifier) | Apache-2.0 |
-| `-output` | Output file path | plugin-manifest-v2.json |
-| `-validate` | Validate existing manifest file | false |
-| `-update` | Update existing manifest file | false |
+| Option          | Description                                                                 | Default                 |
+| --------------- | --------------------------------------------------------------------------- | ----------------------- |
+| `-id`           | Plugin ID in reverse domain notation (e.g., io.maschine.plugins.example)    | Required                |
+| `-name`         | Plugin technical name (e.g., example-plugin)                                | Required                |
+| `-display-name` | Plugin display name (e.g., "Example Plugin")                                | Generated from name     |
+| `-description`  | Plugin description                                                          | Generated               |
+| `-category`     | Plugin category (communication, cloud, monitoring, security, data, general) | general                 |
+| `-version`      | Plugin version                                                              | 0.1.0                   |
+| `-author`       | Author name                                                                 | Unknown                 |
+| `-email`        | Author email                                                                | unknown@example.com     |
+| `-license`      | License (SPDX identifier)                                                   | Apache-2.0              |
+| `-output`       | Output file path                                                            | plugin-manifest-v2.json |
+| `-validate`     | Validate existing manifest file                                             | false                   |
+| `-update`       | Update existing manifest file                                               | false                   |
 
 ## Examples
 

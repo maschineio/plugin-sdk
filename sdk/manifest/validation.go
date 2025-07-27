@@ -269,9 +269,9 @@ func isValidPluginID(id string) bool {
 }
 
 func isValidMRN(mrn string) bool {
-	// MRN format: mrn:service:resource:action
-	// Allow alphanumeric characters in each part
-	match, _ := regexp.MatchString(`^mrn:[a-z][a-z0-9]*:[a-z][a-z0-9]*:[a-z][a-z0-9]*$`, mrn)
+	// MRN format: mrn:service:resource or mrn:service:resource:action etc.
+	// Allow alphanumeric characters in each part, minimum 2 parts after "mrn:"
+	match, _ := regexp.MatchString(`^mrn:[a-z][a-z0-9]*(:[a-z][a-z0-9]*)+$`, mrn)
 	return match
 }
 
